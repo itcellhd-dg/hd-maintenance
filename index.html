@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HD Maintenance</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0b6b43">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+<style>
+:root{
+  --bg:#f3f5f2; --surface:#fff; --sunk:#e8ece6; --fg:#16201a; --muted:#5b665e; --line:#d3dad2;
+  --accent:#0b6b43; --accent-fg:#fff; --marking:#e7b416; --danger:#b3261e; --ok-bg:#d6f0e1; --ok-fg:#0b5a38;
+  --warn-bg:#fbefc9; --warn-fg:#7a5300;
+  --display:"Archivo","Arial Narrow",Arial,sans-serif; --body:"Source Sans 3","Segoe UI",Roboto,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#101512; --surface:#18201b; --sunk:#222c25; --fg:#e6ece7; --muted:#9aa79e; --line:#2f3a32;
+  --accent:#3fb97f; --accent-fg:#06200f; --marking:#f0c53c; --danger:#ff8a80; --ok-bg:#15352a; --ok-fg:#7fdcab;
+  --warn-bg:#3a3016; --warn-fg:#f0cf73; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--body);padding:0 16px 56px}
+.wrap{max-width:860px;margin:0 auto;display:grid;gap:18px}
+header{padding:20px 0 10px;border-bottom:4px solid var(--marking);display:grid;gap:4px}
+.eyebrow{font:600 .72rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font:800 clamp(1.4rem,5vw,2rem)/1.15 var(--display);margin:0}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:10px}
+.tabs button{border:0;background:transparent;color:var(--fg);font:600 .95rem var(--body);padding:8px 14px;border-radius:7px;cursor:pointer}
+.tabs button.on{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.gps{font:500 .8rem var(--mono);padding:5px 10px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.gps.ok{background:var(--ok-bg);color:var(--ok-fg)} .gps.bad{background:var(--warn-bg);color:var(--warn-fg)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:22px}
+fieldset{border:0;margin:0;padding:0;display:grid;gap:14px;min-width:0}
+legend{font:600 1.05rem var(--display);margin-bottom:12px;padding:0;display:flex;gap:10px;align-items:center}
+legend .n{font:500 .72rem var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.full{grid-column:1/-1}
+.field{display:grid;gap:5px;min-width:0}
+label,.lbl{font-weight:600;font-size:.92rem}
+.req{color:var(--danger)}
+.hint{font-size:.82rem;color:var(--muted);margin:0}
+input[type=text],input[type=password],input[type=number],input[type=tel],input[type=search],select,textarea{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:46px}
+textarea{min-height:76px;resize:vertical}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.invalid{border-color:var(--danger)!important;background:color-mix(in srgb,var(--danger) 6%,var(--bg))!important}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer;background:var(--bg);min-height:46px}
+.seg input{accent-color:var(--accent);margin:0;width:18px;height:18px}
+.seg label:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,var(--bg))}
+.seg.invalid{border-radius:8px;outline:2px solid var(--danger);outline-offset:3px}
+.chain{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.chain input{font-family:var(--mono)}
+.photos{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.pcol{border:1px dashed var(--line);border-radius:10px;padding:14px;display:grid;gap:10px;align-content:start;min-width:0}
+.pcol h3{margin:0;font:600 .98rem var(--display);display:flex;justify-content:space-between}
+.pick{display:flex;gap:8px;flex-wrap:wrap}
+.pick input[type=file]{position:absolute;width:1px;height:1px;opacity:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;font:600 .95rem var(--body);border-radius:8px;padding:10px 16px;min-height:46px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:.88rem}
+.btn.link{border:0;background:none;color:var(--danger);padding:4px 0;min-height:0;font-size:.85rem}
+.btn:disabled{opacity:.55;cursor:wait}
+.ph{display:grid;grid-template-columns:92px 1fr;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;min-width:0}
+.ph img{width:92px;height:92px;object-fit:cover;border-radius:6px}
+.ph .meta{display:grid;gap:3px;font-size:.82rem;min-width:0}
+.k{font:500 .76rem var(--mono);overflow-wrap:anywhere}
+.ll{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ll input{min-height:36px;padding:5px 8px;font:500 .78rem var(--mono)}
+.tag{justify-self:start;font:500 .68rem var(--mono);padding:1px 6px;border-radius:4px}
+.tag.ok{background:var(--ok-bg);color:var(--ok-fg)} .tag.man{background:var(--warn-bg);color:var(--warn-fg)}
+.tag.miss{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:16px}
+.msg{font-size:.93rem;flex:1 1 220px}
+.msg.err{color:var(--danger)} .msg.ok{color:var(--accent);font-weight:600}
+.userbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:.9rem;background:var(--sunk);border-radius:8px;padding:6px 6px 6px 12px}
+.userbar #userInfo{min-width:0;overflow-wrap:anywhere}
+.login{max-width:420px;width:100%;justify-self:center}
+.enteredby{margin:0;font-weight:600}
+select:disabled{opacity:1;color:var(--fg);background:var(--sunk);cursor:not-allowed}
+input[readonly]{background:var(--sunk)}
+.done{background:var(--ok-bg);color:var(--ok-fg);border-radius:10px;padding:16px;display:grid;gap:6px}
+.done .id{font:500 1.1rem var(--mono)}
+.results{display:grid;gap:8px}
+.res{text-align:left;width:100%;display:grid;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;color:var(--fg);font:inherit}
+.res.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--bg))}
+.pill{display:inline-block;font:600 .75rem var(--body);padding:1px 9px;border-radius:999px;background:var(--sunk)}
+.pill.st-Estimate{background:#e3e8ef;color:#3a4a60} .pill.st-Tender{background:var(--warn-bg);color:var(--warn-fg)}
+.pill.st-In-Progress{background:#dce9fb;color:#1f4f8f} .pill.st-Complete{background:var(--ok-bg);color:var(--ok-fg)}
+@media (prefers-color-scheme: dark){.pill.st-Estimate{background:#28313c;color:#b8c6d8}.pill.st-In-Progress{background:#1c2d44;color:#9cc3f5}}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--fg);font:600 .85rem var(--body);padding:6px 12px;border-radius:999px;cursor:pointer;min-height:36px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.res .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.res .meta2{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.summary{background:var(--sunk);border-radius:8px;padding:12px 14px;font-size:.93rem;display:grid;gap:2px}
+[hidden]{display:none!important}
+.ub-actions{display:flex;gap:6px;flex-wrap:wrap}
+.notice{margin:0;background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 14px;font-size:.93rem}
+.off{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.off-main{display:grid;gap:2px;min-width:0}
+.pill.os-Active{background:var(--ok-bg);color:var(--ok-fg)} .pill.os-Code-issued{background:var(--warn-bg);color:var(--warn-fg)}
+.pill.os-Disabled{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+.codes{border:2px solid var(--accent);border-radius:10px;padding:14px;display:grid;gap:10px;background:color-mix(in srgb,var(--accent) 6%,var(--surface))}
+.codelist{display:grid;gap:6px}
+.code-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:6px 0}
+.code{font:600 1.35rem var(--mono);letter-spacing:.08em;white-space:nowrap}
+#codesText{font:500 .8rem var(--mono)}
+.login{max-width:440px}
+/* ---- dashboard ---- */
+:root{--st1:#86b6ef;--st2:#5598e7;--st3:#256abf;--st4:#104281;--bar:#2a78d6;--track:#edf0ec;--tip-bg:#16201a;--tip-fg:#ffffff}
+@media (prefers-color-scheme: dark){:root{--st1:#184f95;--st2:#2a78d6;--st3:#6da7ec;--st4:#b7d3f6;--bar:#3987e5;--track:#222c25;--tip-bg:#e6ece7;--tip-fg:#101512}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.dash{gap:18px}
+.dash-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.dash-head h2{margin:0;font:600 1.15rem var(--display)}
+.dash-filters{display:flex;gap:8px;align-items:center}
+.dash-filters select{width:auto;min-width:150px}
+#dashBody{display:grid;gap:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:2px;min-width:0}
+.kpi-label{font-size:.8rem;color:var(--muted);font-weight:600}
+.kpi-val{font:700 clamp(1.2rem,5vw,1.6rem)/1.15 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.kpi-val small{font-size:.6em;font-weight:600;margin-left:2px}
+#msgDash:empty{display:none}
+.kpi-sub{font-size:.8rem;color:var(--muted)}
+.panel{display:grid;gap:10px;min-width:0}
+.panel h3{margin:0;font:600 1rem var(--display)}
+.panel.two{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
+.panel.two>div{display:grid;gap:10px;align-content:start;min-width:0}
+.stagebar{display:flex;gap:2px;height:22px;border-radius:4px;overflow:hidden;background:var(--track)}
+.stagebar span{display:block;height:100%;min-width:3px;cursor:default}
+.stagebar.mini{height:10px;width:110px;border-radius:3px}
+.s1{background:var(--st1)}.s2{background:var(--st2)}.s3{background:var(--st3)}.s4{background:var(--st4)}
+.legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem}
+.legend li{display:flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.legend b{font-variant-numeric:tabular-nums}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.dtable{border-collapse:collapse;width:100%;min-width:560px;font-size:.9rem}
+.dtable th,.dtable td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.dtable th{font-size:.78rem;color:var(--muted);font-weight:600;background:var(--sunk)}
+.dtable tr:last-child td{border-bottom:0}
+.dtable .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dtable td.zero{color:var(--muted)}
+.dtable tfoot td{font-weight:700;background:var(--sunk)}
+.hbars{display:grid;gap:8px}
+.hbar{display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:10px;align-items:center;font-size:.88rem}
+.hbar .nm{overflow-wrap:anywhere;line-height:1.25}
+.hbar .track{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;min-width:0}
+.hbar .area{display:block;min-width:0}
+.hbar .fill{display:block;height:14px;background:var(--bar);border-radius:0 4px 4px 0;min-width:2px;cursor:default}
+.hbar .val{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.82rem}
+.tip{position:fixed;z-index:20;pointer-events:none;background:var(--tip-bg);color:var(--tip-fg);font-size:.8rem;line-height:1.35;padding:6px 9px;border-radius:6px;max-width:240px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Highways · Construction &amp; Maintenance</div>
+    <h1>Road Maintenance Works</h1>
+    <div class="userbar" id="userBar" hidden>
+      <span id="userInfo"></span>
+      <span class="ub-actions">
+        <button type="button" class="btn sm" id="changePwBtn">Change password</button>
+        <button type="button" class="btn sm" id="signOutBtn">Sign out</button>
+      </span>
+    </div>
+    <div class="bar" id="appBar" hidden>
+      <div class="tabs">
+        <button type="button" id="tabDash">Dashboard</button>
+        <button type="button" id="tabNew">New work</button>
+        <button type="button" id="tabUpd">Works</button>
+        <button type="button" id="tabOff">Manage offices</button>
+      </div>
+      <span class="gps" id="gps">GPS: starting…</span>
+    </div>
+  </header>
+
+  <!-- ================= SIGN IN ================= -->
+  <form id="fLogin" class="card login" novalidate hidden>
+    <fieldset>
+      <legend>Sign in</legend>
+      <div class="field"><label for="loginUser">Office username</label>
+        <input type="text" id="loginUser" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="e.g. s_vadalur-1"></div>
+      <div class="field"><label for="loginPw">Password</label>
+        <input type="password" id="loginPw" autocomplete="current-password" placeholder="Password or one-time code"></div>
+      <p class="hint">First time, or after a reset? Enter the 6-digit one-time code from the office above you as the password. You will then set your own password.</p>
+    </fieldset>
+    <div class="actions">
+      <button type="submit" class="btn primary" id="loginBtn">Sign in</button>
+      <span class="msg" id="msgLogin" role="status" aria-live="polite"></span>
+    </div>
+  </form>
+
+  <!-- ================= SET / CHANGE PASSWORD ================= -->
+  <form id="fSetPw" class="card login" novalidate hidden>
+    <fieldset>
+      <legend id="setPwTitle">Set your password</legend>
+      <p class="hint" id="setPwIntro"></p>
+      <div class="field" id="curPwBox" hidden><label for="curPw">Current password</label>
+        <input type="password" id="curPw" autocomplete="current-password"></div>
+      <div class="field"><label for="newPw">New password</label>
+        <input type="password" id="newPw" autocomplete="new-password"></div>
+      <div class="field"><label for="newPw2">Type it again</label>
+        <input type="password" id="newPw2" autocomplete="new-password"></div>
+      <p class="hint">At least 8 characters. Not the username, and not the word "password". Share it only with staff of your office.</p>
+    </fieldset>
+    <div class="actions">
+      <button type="submit" class="btn primary" id="setPwBtn">Save password</button>
+      <button type="button" class="btn" id="setPwCancel" hidden>Cancel</button>
+      <span class="msg" id="msgSetPw" role="status" aria-live="polite"></span>
+    </div>
+  </form>
+
+  <!-- ================= NEW WORK ================= -->
+  <form id="fNew" class="card" novalidate hidden>
+    <fieldset>
+      <legend><span class="n">A</span> Jurisdiction</legend>
+      <div class="grid">
+        <div class="field"><label for="region">C&amp;M Region <span class="req">*</span></label><select id="region"></select></div>
+        <div class="field"><label for="circle">Circle <span class="req">*</span></label><select id="circle"></select></div>
+        <div class="field"><label for="division">Division <span class="req">*</span></label><select id="division"></select></div>
+        <div class="field"><label for="subdivision">Sub-Division <span class="req">*</span></label><select id="subdivision"></select></div>
+        <div class="field"><label for="section">Section <span class="req">*</span></label><select id="section"></select></div>
+      </div>
+      <p class="hint" id="jurisHint">Levels above your office are fixed by your login.</p>
+    </fieldset>
+    <fieldset>
+      <legend><span class="n">B</span> Road and work</legend>
+      <div class="grid">
+        <div class="field full"><label for="road">Name of the Road <span class="req">*</span></label><input type="text" id="road" list="dl-road" autocomplete="off"></div>
+        <div class="field"><span class="lbl" id="lblCls">Classification <span class="req">*</span></span>
+          <div class="seg" id="segCls" role="radiogroup" aria-labelledby="lblCls">
+            <label><input type="radio" name="cls" value="SH"> SH</label>
+            <label><input type="radio" name="cls" value="MDR"> MDR</label>
+            <label><input type="radio" name="cls" value="ODR"> ODR</label>
+          </div>
+        </div>
+        <div class="field"><label for="roadNo">Road No.</label><input type="text" id="roadNo" placeholder="e.g. SH-58" autocomplete="off"></div>
+        <div class="field"><label for="nature">Nature of work <span class="req">*</span></label>
+          <select id="nature">
+            <option value="">Select…</option>
+            <option>Periodical Renewal</option>
+            <option>Special Repairs</option>
+            <option>Urgent Repairs</option>
+            <option>Potholes/ Patches</option>
+            <option>High Berm Cutting</option>
+            <option>Low Berm Filling</option>
+            <option>Desilting Drain</option>
+            <option>Desilting Silt Catchpit</option>
+            <option>Vent clearance of Cross Drainage Structures</option>
+            <option>Jungle Clearance</option>
+            <option>Repairs to CD Structures</option>
+            <option>Median and Kerb Painting</option>
+            <option>Removal of Silt on the Carriageway</option>
+            <option>Others</option>
+          </select>
+        </div>
+        <div class="field" id="otherBox" hidden><label for="natureOther">Describe the work <span class="req">*</span></label><input type="text" id="natureOther"></div>
+        <div class="field full"><span class="lbl">Stretch (chainage) <span class="req">*</span></span>
+          <div class="chain">
+            <input type="number" id="fromKm" step="0.001" min="0" inputmode="decimal" placeholder="From km" aria-label="From km">
+            <span class="hint">to</span>
+            <input type="number" id="toKm" step="0.001" min="0" inputmode="decimal" placeholder="To km" aria-label="To km">
+          </div>
+          <p class="hint">Write km/m as decimal km: 12/400 is 12.400. <span id="len"></span></p>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="n">C</span> Status of work</legend>
+      <div class="seg" id="segStatus" role="radiogroup" aria-label="Status of work">
+        <label><input type="radio" name="status" value="Estimate"> Estimate</label>
+        <label><input type="radio" name="status" value="Tender"> Tender</label>
+        <label><input type="radio" name="status" value="In Progress"> In Progress</label>
+        <label><input type="radio" name="status" value="Complete"> Complete</label>
+      </div>
+      <div class="field" style="max-width:320px"><label for="estimate">Estimate amount (₹ in lakhs)</label>
+        <input type="number" id="estimate" step="0.01" min="0" inputmode="decimal" placeholder="e.g. 12.50">
+        <span class="hint" id="estHint">Enter in lakhs: ₹12,50,000 is 12.50</span></div>
+      <div class="field"><label for="remarks">Remarks</label><textarea id="remarks" placeholder="Agency, dates, anything the reviewer should know"></textarea></div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="n">D</span> Photographs</legend>
+      <p class="hint">Each photo is stamped with date, time and GPS position. Allow location when the browser asks, and take photos standing at the work site.</p>
+      <div class="photos">
+        <div class="pcol" data-box="newBefore" data-phase="Before" data-title="Prior to repair"></div>
+        <div class="pcol" data-box="newAfter" data-phase="After" data-title="After repair"></div>
+      </div>
+      <p class="hint">At least one prior-to-repair photo is needed; after-repair photos are needed when the status is Complete.</p>
+    </fieldset>
+    <fieldset>
+      <legend><span class="n">E</span> Entered by</legend>
+      <div class="grid">
+        <div class="field"><label for="person">Your name &amp; designation <span class="req">*</span></label><input type="text" id="person" autocomplete="name" placeholder="e.g. R. Kumar, AE"></div>
+        <div class="field"><label for="mobile">Mobile No.</label><input type="tel" id="mobile" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="10 digits"></div>
+      </div>
+      <p class="hint">Several staff share the office login, so each entry records who made it. Remembered on this phone.</p>
+    </fieldset>
+
+    <div class="actions">
+      <button type="submit" class="btn primary" id="saveNew">Submit work</button>
+      <button type="button" class="btn" id="clearNew">Clear form</button>
+      <span class="msg" id="msgNew" role="status" aria-live="polite"></span>
+    </div>
+  </form>
+
+  <!-- ================= WORKS ================= -->
+  <form id="fUpd" class="card" novalidate hidden>
+    <fieldset>
+      <legend><span class="n">1</span> Works captured</legend>
+      <div class="chips" id="statusChips" role="group" aria-label="Filter by status">
+        <button type="button" class="chip on" data-st="">All</button>
+        <button type="button" class="chip" data-st="Estimate">Estimate</button>
+        <button type="button" class="chip" data-st="Tender">Tender</button>
+        <button type="button" class="chip" data-st="In Progress">In Progress</button>
+        <button type="button" class="chip" data-st="Complete">Complete</button>
+      </div>
+      <div class="bar" style="flex-wrap:nowrap">
+        <input type="search" id="q" placeholder="Search road, section, division, Work ID…" aria-label="Search">
+        <button type="button" class="btn" id="findBtn">Search</button>
+      </div>
+      <div class="bar"><span class="hint" id="listInfo"></span><button type="button" class="btn sm" id="refreshBtn">Refresh</button></div>
+      <p class="msg ok" id="msgUpdDone" hidden></p>
+      <div class="results" id="results"><p class="hint">Loading works…</p></div>
+    </fieldset>
+
+    <div id="updBody" hidden style="display:grid;gap:22px">
+      <div class="summary" id="updSummary"></div>
+      <p class="notice" id="viewOnly" hidden>Your office can view works but not change them.</p>
+      <div id="updEdit" style="display:grid;gap:22px">
+        <fieldset>
+          <legend><span class="n">2</span> New status</legend>
+          <div class="seg" id="segUStatus" role="radiogroup" aria-label="Status of work">
+            <label><input type="radio" name="ustatus" value="Estimate"> Estimate</label>
+            <label><input type="radio" name="ustatus" value="Tender"> Tender</label>
+            <label><input type="radio" name="ustatus" value="In Progress"> In Progress</label>
+            <label><input type="radio" name="ustatus" value="Complete"> Complete</label>
+          </div>
+          <div class="field" style="max-width:320px"><label for="uestimate">Estimate amount (₹ in lakhs)</label>
+            <input type="number" id="uestimate" step="0.01" min="0" inputmode="decimal" placeholder="e.g. 12.50">
+            <span class="hint" id="uestHint"></span></div>
+          <div class="field"><label for="uremarks">Remarks</label><textarea id="uremarks"></textarea></div>
+        </fieldset>
+        <fieldset>
+          <legend><span class="n">3</span> Add photographs</legend>
+          <div class="photos">
+            <div class="pcol" data-box="updBefore" data-phase="Before" data-title="Prior to repair"></div>
+            <div class="pcol" data-box="updAfter" data-phase="After" data-title="After repair"></div>
+          </div>
+        </fieldset>
+        <div class="field" style="max-width:420px"><label for="uperson">Updated by (name &amp; designation) <span class="req">*</span></label><input type="text" id="uperson" autocomplete="name"></div>
+        <div class="actions">
+          <button type="submit" class="btn primary" id="saveUpd">Save update</button>
+          <span class="msg" id="msgUpd" role="status" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- ================= DASHBOARD ================= -->
+  <section id="fDash" class="card dash" hidden>
+    <div class="dash-head">
+      <div><h2 id="dashTitle">Dashboard</h2><p class="hint" id="dashAsOf"></p></div>
+      <div class="dash-filters">
+        <label for="dashFy" class="sr">Financial year</label>
+        <select id="dashFy" aria-label="Financial year"></select>
+        <button type="button" class="btn sm" id="dashRefresh">Refresh</button>
+      </div>
+    </div>
+    <p class="msg" id="msgDash" role="status" aria-live="polite"></p>
+    <div id="dashBody" hidden>
+      <div class="kpis">
+        <div class="kpi"><span class="kpi-label">Works</span><span class="kpi-val" id="kWorks"></span><span class="kpi-sub" id="kWorksSub"></span></div>
+        <div class="kpi"><span class="kpi-label">Estimate amount</span><span class="kpi-val" id="kAmt"></span><span class="kpi-sub" id="kAmtSub"></span></div>
+        <div class="kpi"><span class="kpi-label">Road length covered</span><span class="kpi-val" id="kKm"></span><span class="kpi-sub" id="kKmSub"></span></div>
+        <div class="kpi"><span class="kpi-label">Completed</span><span class="kpi-val" id="kDone"></span><span class="kpi-sub" id="kDoneSub"></span></div>
+      </div>
+
+      <div class="panel">
+        <h3>Stage of works</h3>
+        <div class="stagebar" id="stageBar" role="img"></div>
+        <ul class="legend" id="stageLegend"></ul>
+      </div>
+
+      <div class="panel">
+        <h3 id="childTitle">By office</h3>
+        <div class="tablebox">
+          <table class="dtable">
+            <thead><tr><th id="childCol">Office</th><th class="num">Works</th><th class="num">Est. (₹ L)</th><th class="num">Km</th><th>Stage</th><th class="num">Complete</th></tr></thead>
+            <tbody id="childRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel two">
+        <div>
+          <h3>Nature of work <span class="hint">by estimate amount</span></h3>
+          <div class="hbars" id="natureBars"></div>
+        </div>
+        <div>
+          <h3>Road class <span class="hint">by estimate amount</span></h3>
+          <div class="hbars" id="classBars"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tip" id="tip" role="tooltip" hidden></div>
+  </section>
+
+  <!-- ================= MANAGE OFFICES ================= -->
+  <section id="fOff" class="card" hidden>
+    <fieldset>
+      <legend>Offices under you</legend>
+      <p class="hint" id="offIntro">Activate an office to get its one-time code (6 digits, valid 48 hours, works once). Send it to that office by phone or WhatsApp. Use Reset when an office forgets its password: the old password stops working and its phones are signed out.</p>
+      <div class="chips" id="offChips" role="group" aria-label="Filter by status">
+        <button type="button" class="chip on" data-os="">All</button>
+        <button type="button" class="chip" data-os="Not activated">Not activated</button>
+        <button type="button" class="chip" data-os="Code issued">Code issued</button>
+        <button type="button" class="chip" data-os="Active">Active</button>
+      </div>
+      <input type="search" id="offQ" placeholder="Search office or username…" aria-label="Search offices">
+      <div class="bar"><span class="hint" id="offInfo"></span>
+        <span class="ub-actions"><button type="button" class="btn sm" id="offRefresh">Refresh</button>
+        <button type="button" class="btn sm primary" id="bulkBtn" hidden></button></span></div>
+    </fieldset>
+
+    <div class="codes" id="codesBox" hidden>
+      <div class="bar"><strong>One-time codes</strong><button type="button" class="btn sm" id="codesClose">Done</button></div>
+      <p class="hint">Shown only now. Copy and send each office its own code. A new code replaces any earlier one.</p>
+      <div id="codesList" class="codelist"></div>
+      <textarea id="codesText" readonly rows="6" aria-label="Codes to copy"></textarea>
+      <div class="actions"><button type="button" class="btn primary" id="copyCodes">Copy all</button><span class="msg" id="msgCodes" role="status" aria-live="polite"></span></div>
+    </div>
+
+    <p class="msg" id="msgOff" role="status" aria-live="polite"></p>
+    <div class="results" id="offList"><p class="hint">Loading offices…</p></div>
+  </section>
+</div>
+
+<datalist id="dl-road"></datalist>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+  /* ====== SETTING: when this page is hosted outside Apps Script (e.g. GitHub Pages),
+     paste your Apps Script Web app URL (ending in /exec) between the quotes. ====== */
+  var API_URL = '';
+
+  var IN_APPS_SCRIPT = !!(window.google && google.script && google.script.run);
+  var session = null;   // {token, user}
+  var setupToken = null;
+  var run = function (fn, arg) {
+    var req = { fn: fn, arg: arg === undefined ? null : arg, token: session ? session.token : '' };
+    var p;
+    if (IN_APPS_SCRIPT) {
+      p = new Promise(function (res, rej) { google.script.run.withSuccessHandler(res).withFailureHandler(rej).api(req); });
+    } else if (!API_URL) {
+      p = Promise.reject(new Error('The app is not linked to the Google Sheet yet (API_URL is empty).'));
+    } else {
+      p = fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(req) })
+        .then(function (r) { if (!r.ok) throw new Error('Server error ' + r.status + '.'); return r.json(); })
+        .then(function (j) { if (!j.ok) throw new Error(j.error || 'Request failed.'); return j.result; },
+              function (e) { throw new Error(e && e.message && /fetch|network/i.test(e.message) ? 'No internet connection.' : (e && e.message) || 'Request failed.'); });
+    }
+    return p.catch(function (e) {
+      var m = (e && e.message) || String(e);
+      var a = m.indexOf('AUTH:');
+      if (a >= 0) { signOut(m.slice(a + 5).trim()); throw new Error('Please sign in again.'); }
+      throw new Error(m.replace(/^(Exception|Error):\s*/, ''));
+    });
+  };
+  if (!IN_APPS_SCRIPT && 'serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  }
+  var APP_LINK = IN_APPS_SCRIPT ? '' : location.origin + location.pathname;
+
+  var LEVELS = ['region', 'circle', 'division', 'subdivision', 'section'];
+  var LABEL = { region: 'region', circle: 'circle', division: 'division', subdivision: 'sub-division', section: 'section' };
+  var ROWS = [];      // jurisdiction rows in this office's area: [region, circle, division, sub-division, section]
+  var FIXED = {};     // levels fixed by the login
+  var lists = { roads: [] };
+  var FRESH_MS = 15 * 60 * 1000;
+  var stores = { newBefore: [], newAfter: [], updBefore: [], updAfter: [] };
+  var selected = null;
+  function msg(id, t, cls) { var m = $(id); m.textContent = t; m.className = 'msg ' + (cls || ''); }
+
+  /* ---------- per-office memory on this phone ---------- */
+  function memKey() { return 'hd-defaults:' + (session ? session.user.username : ''); }
+  function mem() { try { return JSON.parse(localStorage.getItem(memKey()) || '{}'); } catch (e) { return {}; } }
+  function remember(extra) {
+    try {
+      var o = mem();
+      LEVELS.forEach(function (k) { o[k] = $('#' + k).value; });
+      o.person = $('#person').value.trim(); o.mobile = $('#mobile').value.trim();
+      Object.keys(extra || {}).forEach(function (k) { o[k] = extra[k]; });
+      localStorage.setItem(memKey(), JSON.stringify(o));
+    } catch (e) {}
+  }
+
+  /* ---------- jurisdiction dropdowns, driven by the rows for this office ---------- */
+  function uniq(a) { var s = {}, out = []; a.forEach(function (v) { if (!s[v]) { s[v] = 1; out.push(v); } }); return out; }
+  function setJuris(want) {
+    want = want || {};
+    var chosen = [];
+    LEVELS.forEach(function (k, i) {
+      var sel = $('#' + k);
+      var avail = chosen.length === i && !chosen.some(function (v) { return !v; })
+        ? uniq(ROWS.filter(function (r) { return chosen.every(function (v, j) { return r[j] === v; }); }).map(function (r) { return r[i]; }))
+        : [];
+      var prev = i ? LABEL[LEVELS[i - 1]] : '';
+      sel.innerHTML = '<option value="">' + (avail.length ? 'Select ' + LABEL[k] + '…' : 'Select ' + prev + ' first') + '</option>' +
+        avail.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+      var target = FIXED[k] || want[k] || '';
+      var hit = avail.filter(function (v) { return v.toLowerCase() === String(target).toLowerCase(); })[0];
+      if (!hit && avail.length === 1) hit = avail[0];
+      sel.value = hit || '';
+      sel.disabled = !!FIXED[k] || !avail.length;
+      chosen.push(sel.value);
+    });
+    fillRoads();
+  }
+  LEVELS.forEach(function (k, i) {
+    $('#' + k).addEventListener('change', function () {
+      var want = {};
+      LEVELS.slice(0, i + 1).forEach(function (x) { want[x] = $('#' + x).value; });
+      $('#' + k).classList.remove('invalid');
+      setJuris(want);
+    });
+  });
+  function fillRoads() {
+    var sec = $('#section').value, rs = {};
+    lists.roads.forEach(function (r) { if (!sec || r.section === sec) rs[r.road] = 1; });
+    $('#dl-road').innerHTML = Object.keys(rs).sort().map(function (v) { return '<option value="' + esc(v) + '">'; }).join('');
+  }
+  $('#road').addEventListener('change', function () {
+    var r = lists.roads.filter(function (x) { return x.road === $('#road').value; })[0];
+    if (!r) return;
+    if (!$('#roadNo').value && r.roadNo) $('#roadNo').value = r.roadNo;
+    var c = document.querySelector('input[name=cls][value="' + r.cls + '"]'); if (c && !document.querySelector('input[name=cls]:checked')) c.checked = true;
+  });
+  function loadLists() {
+    return run('getLists').then(function (l) {
+      ROWS = (l && l.rows) || []; lists.roads = (l && l.roads) || [];
+      setJuris(mem());
+    }).catch(function (e) { msg('#msgNew', 'Could not load the jurisdiction list: ' + e.message, 'err'); });
+  }
+
+  /* ---------- tabs ---------- */
+  function tab(which) {
+    $('#tabDash').classList.toggle('on', which === 'dash');
+    $('#tabNew').classList.toggle('on', which === 'new');
+    $('#tabUpd').classList.toggle('on', which === 'upd');
+    $('#tabOff').classList.toggle('on', which === 'off');
+    $('#fDash').hidden = which !== 'dash';
+    $('#fNew').hidden = which !== 'new'; $('#fUpd').hidden = which !== 'upd'; $('#fOff').hidden = which !== 'off';
+  }
+  $('#tabDash').onclick = function () { tab('dash'); if (!dashLoaded) loadDash(); };
+  $('#tabNew').onclick = function () { tab('new'); };
+  $('#tabUpd').onclick = function () { tab('upd'); if (!listLoaded) search(); };
+  $('#tabOff').onclick = function () { tab('off'); if (!offLoaded) loadOffices(); };
+
+  /* ---------- live GPS ---------- */
+  var fix = null;
+  function setGps(text, cls) { var g = $('#gps'); g.textContent = text; g.className = 'gps ' + (cls || ''); }
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(function (p) {
+      fix = { lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy), at: Date.now() };
+      setGps('GPS on · ±' + fix.acc + ' m', fix.acc <= 50 ? 'ok' : 'bad');
+    }, function (e) {
+      setGps(e.code === 1 ? 'GPS blocked – allow location' : 'GPS unavailable', 'bad');
+    }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+  } else { setGps('GPS not supported', 'bad'); }
+  function freshFix() { return fix && Date.now() - fix.at < 2 * 60 * 1000 ? fix : null; }
+
+  $('#nature').onchange = function () { $('#otherBox').hidden = $('#nature').value !== 'Others'; };
+  function updLen() {
+    var a = parseFloat($('#fromKm').value), b = parseFloat($('#toKm').value);
+    $('#len').textContent = isFinite(a) && isFinite(b) && b >= a ? 'Length: ' + (b - a).toFixed(3) + ' km' : '';
+  }
+  $('#fromKm').oninput = $('#toKm').oninput = updLen;
+  function showLakhs(inputSel, hintSel) {
+    var v = parseFloat($(inputSel).value);
+    $(hintSel).textContent = isFinite(v) && v >= 0
+      ? '= ₹' + Math.round(v * 100000).toLocaleString('en-IN')
+      : (inputSel === '#estimate' ? 'Enter in lakhs: ₹12,50,000 is 12.50' : '');
+  }
+  $('#estimate').addEventListener('input', function () { showLakhs('#estimate', '#estHint'); });
+  $('#uestimate').addEventListener('input', function () { showLakhs('#uestimate', '#uestHint'); });
+
+
+  /* ---------- photo boxes ---------- */
+  function fmtTime(d) {
+    return new Date(d).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  }
+  function hasGps(p) { var a = parseFloat(p.lat), b = parseFloat(p.lng); return isFinite(a) && isFinite(b) && !(a === 0 && b === 0); }
+
+  document.querySelectorAll('.pcol').forEach(function (col) {
+    var key = col.dataset.box;
+    col.innerHTML = '<h3>' + esc(col.dataset.title) + ' <span class="hint" data-cnt></span></h3>' +
+      '<div class="pick"><label class="btn sm primary" for="cam-' + key + '">Take photo</label><input type="file" id="cam-' + key + '" accept="image/*" capture="environment">' +
+      '<label class="btn sm" for="gal-' + key + '">From gallery</label><input type="file" id="gal-' + key + '" accept="image/*" multiple></div>' +
+      '<div data-list style="display:grid;gap:8px"></div>';
+    ['cam-', 'gal-'].forEach(function (pre) {
+      var inp = document.getElementById(pre + key);
+      inp.addEventListener('change', function () { addFiles(key, Array.prototype.slice.call(inp.files)); inp.value = ''; });
+    });
+    col.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-rm]'); if (!b) return;
+      stores[key] = stores[key].filter(function (p) { return p.key !== b.dataset.rm; }); renderBox(key);
+    });
+    col.addEventListener('input', function (e) {
+      var t = e.target.closest('[data-ll]'); if (!t) return;
+      var parts = t.dataset.ll.split(':');
+      stores[key].forEach(function (p) { if (p.key === parts[0]) p[parts[1]] = t.value; });
+    });
+    renderBox(key);
+  });
+
+  function addFiles(key, files) {
+    var now = Date.now();
+    var liveAtPick = freshFix();
+    return files.reduce(function (chain, file) {
+      return chain.then(function () {
+        var parse = window.exifr ? exifr.parse(file, { gps: true, pick: ['DateTimeOriginal', 'CreateDate', 'latitude', 'longitude', 'GPSLatitude', 'GPSLongitude', 'GPSLatitudeRef', 'GPSLongitudeRef'] }).catch(function () { return null; }) : Promise.resolve(null);
+        return parse.then(function (ex) {
+          var t = ex && (ex.DateTimeOriginal || ex.CreateDate);
+          var takenAt = t instanceof Date && !isNaN(t) ? t : new Date(file.lastModified || now);
+          var p = { key: Math.random().toString(36).slice(2), file: file, preview: URL.createObjectURL(file), takenAt: takenAt, lat: '', lng: '', acc: '', source: '' };
+          if (ex && isFinite(ex.latitude) && isFinite(ex.longitude) && !(ex.latitude === 0 && ex.longitude === 0)) {
+            p.lat = ex.latitude; p.lng = ex.longitude; p.source = 'Photo GPS (EXIF)';
+          } else if (liveAtPick && Math.abs(now - takenAt.getTime()) < FRESH_MS) {
+            p.lat = liveAtPick.lat; p.lng = liveAtPick.lng; p.acc = liveAtPick.acc; p.source = 'Device GPS at capture';
+          } else {
+            p.source = 'Entered manually';
+          }
+          stores[key].push(p);
+          renderBox(key);
+        });
+      });
+    }, Promise.resolve());
+  }
+
+  function renderBox(key) {
+    var col = document.querySelector('[data-box="' + key + '"]');
+    var list = stores[key];
+    col.querySelector('[data-cnt]').textContent = list.length ? list.length + ' photo' + (list.length > 1 ? 's' : '') : '';
+    col.querySelector('[data-list]').innerHTML = list.length ? list.map(function (p) {
+      var manual = p.source === 'Entered manually';
+      var tag = !manual ? '<span class="tag ok">' + esc(p.source.toUpperCase()) + '</span>' : hasGps(p) ? '<span class="tag man">GPS ENTERED BY HAND</span>' : '<span class="tag miss">NO GPS – ENTER BELOW</span>';
+      var ll = manual
+        ? '<div class="ll"><input type="number" step="any" inputmode="decimal" placeholder="Latitude" aria-label="Latitude" data-ll="' + p.key + ':lat" value="' + esc(p.lat) + '"><input type="number" step="any" inputmode="decimal" placeholder="Longitude" aria-label="Longitude" data-ll="' + p.key + ':lng" value="' + esc(p.lng) + '"></div>'
+        : '<span class="k">' + Number(p.lat).toFixed(6) + ', ' + Number(p.lng).toFixed(6) + (p.acc ? ' (±' + p.acc + ' m)' : '') + '</span>';
+      return '<div class="ph"><img src="' + p.preview + '" alt="Photo preview"><div class="meta">' + tag +
+        '<span class="k">' + esc(fmtTime(p.takenAt)) + ' IST</span>' + ll +
+        '<button type="button" class="btn link" data-rm="' + p.key + '">Remove</button></div></div>';
+    }).join('') : '<p class="hint">No photos yet.</p>';
+  }
+
+  /* ---------- stamp photo ---------- */
+  function loadImg(src) { return new Promise(function (res, rej) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = rej; i.src = src; }); }
+  function stamp(p, phase, info) {
+    return loadImg(p.preview).then(function (img) {
+      var max = 1600, sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      var w = Math.round(img.naturalWidth * sc), h = Math.round(img.naturalHeight * sc);
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h);
+      var fs = Math.max(14, Math.round(w / 52)), pad = Math.round(fs * 0.7), lh = Math.round(fs * 1.35);
+      var lines = [
+        (phase === 'Before' ? 'PRIOR TO REPAIR' : 'AFTER REPAIR') + '  |  ' + info.road + (info.roadNo ? ' (' + info.roadNo + ')' : ''),
+        'Km ' + info.fromKm + ' - ' + info.toKm + '  |  Sec: ' + info.section + '  |  Sub-Dn: ' + info.subdivision,
+        fmtTime(p.takenAt) + ' IST',
+        'Lat ' + Number(p.lat).toFixed(6) + '  Long ' + Number(p.lng).toFixed(6) + (p.acc ? '  ±' + p.acc + ' m' : '') + (p.source === 'Entered manually' ? '  (entered)' : '')
+      ];
+      var bh = lines.length * lh + pad * 2;
+      g.fillStyle = 'rgba(0,0,0,0.62)'; g.fillRect(0, h - bh, w, bh);
+      g.fillStyle = '#e7b416'; g.fillRect(0, h - bh, Math.max(6, fs / 3), bh);
+      g.fillStyle = '#ffffff'; g.textBaseline = 'top';
+      lines.forEach(function (t, i) { g.font = (i === 0 ? '700 ' : '400 ') + fs + 'px Arial, sans-serif'; g.fillText(t, pad + fs / 2, h - bh + pad + i * lh, w - pad * 2 - fs); });
+      return c.toDataURL('image/jpeg', 0.82);
+    });
+  }
+
+  function uploadAll(workId, items, info, setMsg) {
+    var n = 0;
+    return items.reduce(function (chain, it) {
+      return chain.then(function () {
+        n++; setMsg('Uploading photo ' + n + ' of ' + items.length + '…');
+        return stamp(it.p, it.phase, info).then(function (dataUrl) {
+          return run('uploadPhoto', { workId: workId, phase: it.phase, dataUrl: dataUrl, takenAt: new Date(it.p.takenAt).toISOString(), lat: Number(it.p.lat), lng: Number(it.p.lng), acc: it.p.acc, source: it.p.source });
+        }).then(function () { it.p.uploaded = true; });
+      });
+    }, Promise.resolve());
+  }
+  function newWorkId() {
+    var d = new Date(Date.now() + 330 * 60000).toISOString(); // IST
+    var r = Math.random().toString(36).slice(2, 6).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
+    while (r.length < 4) r += 'X';
+    return 'MW-' + d.slice(0, 10).replace(/-/g, '') + '-' + d.slice(11, 19).replace(/:/g, '') + '-' + r;
+  }
+  function radio(name) { var r = document.querySelector('input[name=' + name + ']:checked'); return r ? r.value : ''; }
+  function gpsMissing(arr) { return arr.filter(function (p) { return !hasGps(p); }).length; }
+
+  /* ---------- submit a new work ---------- */
+  var savedWorkId = null;
+  $('#fNew').addEventListener('submit', function (e) {
+    e.preventDefault();
+    document.querySelectorAll('.invalid').forEach(function (x) { x.classList.remove('invalid'); });
+    var errs = [];
+    var need = function (id, label) { if (!$('#' + id).value.trim()) { $('#' + id).classList.add('invalid'); errs.push(label); } };
+    need('region', 'C&M Region'); need('circle', 'Circle'); need('division', 'Division'); need('subdivision', 'Sub-Division'); need('section', 'Section');
+    need('road', 'Name of the Road');
+    if (!radio('cls')) { $('#segCls').classList.add('invalid'); errs.push('Classification'); }
+    need('nature', 'Nature of work'); if ($('#nature').value === 'Others') need('natureOther', 'Work description');
+    var a = parseFloat($('#fromKm').value), b = parseFloat($('#toKm').value);
+    if (!isFinite(a)) { $('#fromKm').classList.add('invalid'); errs.push('From km'); }
+    if (!isFinite(b) || b < a) { $('#toKm').classList.add('invalid'); errs.push('To km (not less than From km)'); }
+    var status = radio('status'); if (!status) { $('#segStatus').classList.add('invalid'); errs.push('Status of work'); }
+    var est = $('#estimate').value.trim();
+    if (est && !(parseFloat(est) >= 0)) { $('#estimate').classList.add('invalid'); errs.push('Estimate amount (a number in lakhs)'); }
+    if (!stores.newBefore.length) errs.push('a prior-to-repair photo');
+    if (status === 'Complete' && !stores.newAfter.length) errs.push('an after-repair photo');
+    var miss = gpsMissing(stores.newBefore.concat(stores.newAfter)); if (miss) errs.push('GPS for ' + miss + ' photo(s)');
+    if ($('#person').value.trim().length < 2) { $('#person').classList.add('invalid'); errs.push('Your name'); }
+    var mob = $('#mobile').value.replace(/\D/g, '');
+    if (mob && mob.length !== 10) { $('#mobile').classList.add('invalid'); errs.push('Mobile No. (10 digits)'); }
+    if (errs.length) { msg('#msgNew', 'Still needed: ' + errs.join(', ') + '.', 'err'); return; }
+
+    remember();
+    var workId = savedWorkId || newWorkId(); savedWorkId = workId;
+    var info = { road: $('#road').value.trim(), roadNo: $('#roadNo').value.trim(), fromKm: a.toFixed(3), toKm: b.toFixed(3), section: $('#section').value, subdivision: $('#subdivision').value };
+    var items = stores.newBefore.map(function (p) { return { p: p, phase: 'Before' }; }).concat(stores.newAfter.map(function (p) { return { p: p, phase: 'After' }; }));
+    var btn = $('#saveNew'); btn.disabled = true;
+    uploadAll(workId, items.filter(function (it) { return !it.p.uploaded; }), info, function (t) { msg('#msgNew', t); })
+      .then(function () {
+        msg('#msgNew', 'Saving the work…');
+        return run('submitWork', {
+          workId: workId, region: $('#region').value, circle: $('#circle').value, division: $('#division').value,
+          subdivision: $('#subdivision').value, section: $('#section').value,
+          road: info.road, roadNo: info.roadNo, cls: radio('cls'),
+          nature: $('#nature').value === 'Others' ? 'Others: ' + $('#natureOther').value.trim() : $('#nature').value,
+          fromKm: a, toKm: b, status: status, remarks: $('#remarks').value, estimate: est,
+          person: $('#person').value.trim(), mobile: mob
+        });
+      })
+      .then(function (r) {
+        msg('#msgNew', '');
+        var box = document.createElement('div'); box.className = 'done';
+        box.innerHTML = '<strong>Work submitted.</strong><span>Work ID for your records:</span><span class="id">' + esc(r.workId) + '</span>';
+        $('#fNew').prepend(box); setTimeout(function () { box.remove(); }, 60000);
+        clearNew(); window.scrollTo(0, 0); loadLists(); listLoaded = false;
+      })
+      .catch(function (err) { msg('#msgNew', 'Not saved: ' + err.message + ' Check the connection and tap Submit again; photos already sent will not be sent twice.', 'err'); })
+      .then(function () { btn.disabled = false; });
+  });
+
+  /* Keeps the jurisdiction and the person's name; clears the work details and photos. */
+  function clearNew() {
+    var keep = {}; LEVELS.forEach(function (k) { keep[k] = $('#' + k).value; });
+    var person = $('#person').value, mobile = $('#mobile').value;
+    $('#fNew').reset();
+    $('#person').value = person; $('#mobile').value = mobile;
+    setJuris(keep);
+    stores.newBefore = []; stores.newAfter = []; renderBox('newBefore'); renderBox('newAfter');
+    savedWorkId = null; $('#otherBox').hidden = true; updLen(); showLakhs('#estimate', '#estHint');
+    document.querySelectorAll('.invalid').forEach(function (x) { x.classList.remove('invalid'); });
+  }
+  $('#clearNew').onclick = function () { clearNew(); setJuris({}); msg('#msgNew', 'Form cleared.', 'ok'); };
+  ['#person', '#mobile'].forEach(function (id) { $(id).addEventListener('change', function () { remember(); }); });
+  $('#uperson').addEventListener('change', function () { remember({ person: $('#uperson').value.trim() }); });
+
+  /* ---------- works list and update ---------- */
+  var found = [], statusFilter = '', listLoaded = false, canUpdate = false;
+  function search() {
+    listLoaded = true;
+    $('#results').innerHTML = '<p class="hint">Loading works…</p>';
+    $('#listInfo').textContent = '';
+    run('findWorks', { q: $('#q').value, status: statusFilter, limit: 100 }).then(function (res) {
+      found = res.works || []; canUpdate = !!res.canUpdate;
+      var n = res.matched || 0;
+      $('#listInfo').textContent = (n ? (found.length < n ? 'Showing latest ' + found.length + ' of ' + n + ' works' : n + ' work' + (n > 1 ? 's' : '')) + (statusFilter ? ' · ' + statusFilter : '') + ' · ' : 'Showing ') + res.scope;
+      $('#results').innerHTML = found.length ? found.map(function (w, i) {
+        return '<button type="button" class="res" data-i="' + i + '">' +
+          '<span class="top"><strong>' + esc(w.road) + (w.roadNo ? ' <span class="hint">(' + esc(w.roadNo) + ')</span>' : '') + '</strong>' +
+          '<span><span class="pill">' + esc(w.cls) + '</span> <span class="pill st-' + esc(String(w.status).replace(/\s+/g, '-')) + '">' + esc(w.status) + '</span></span></span>' +
+          '<span>' + esc(w.nature) + ' · Km ' + esc(w.fromKm) + '–' + esc(w.toKm) + '</span>' +
+          '<span class="hint">' + esc(w.section) + ' · ' + esc(w.subdivision) + ' · ' + esc(w.division) + '</span>' +
+          '<span class="meta2 hint"><span class="k">' + esc(w.workId) + '</span><span>' + (w.estimate ? 'Est. ₹' + esc(w.estimate) + ' L · ' : '') + 'Photos ' + w.beforeCount + ' before / ' + w.afterCount + ' after · ' + esc(w.updated) + '</span></span>' +
+          '</button>';
+      }).join('') : '<p class="hint">' + ($('#q').value || statusFilter ? 'No works match this filter.' : 'No works captured yet in your area.') + '</p>';
+    }).catch(function (err) { $('#results').innerHTML = '<p class="hint" style="color:var(--danger)">Could not load works: ' + esc(err.message) + '</p>'; });
+  }
+  $('#statusChips').addEventListener('click', function (e) {
+    var c = e.target.closest('[data-st]'); if (!c) return;
+    document.querySelectorAll('#statusChips .chip').forEach(function (x) { x.classList.toggle('on', x === c); });
+    statusFilter = c.dataset.st; $('#updBody').hidden = true; selected = null; search();
+  });
+  $('#refreshBtn').onclick = search;
+  $('#findBtn').onclick = search;
+  $('#q').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); search(); } });
+  $('#results').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-i]'); if (!b) return;
+    document.querySelectorAll('.res').forEach(function (x) { x.classList.remove('sel'); }); b.classList.add('sel');
+    selected = found[+b.dataset.i]; $('#msgUpdDone').hidden = true;
+    stores.updBefore = []; stores.updAfter = []; renderBox('updBefore'); renderBox('updAfter');
+    $('#updSummary').innerHTML = '<strong>' + esc(selected.road) + (selected.roadNo ? ' (' + esc(selected.roadNo) + ')' : '') + '</strong>' +
+      '<span>Km ' + esc(selected.fromKm) + '–' + esc(selected.toKm) + ' · ' + esc(selected.nature) + '</span>' +
+      '<span>Section ' + esc(selected.section) + ' · Sub-Division ' + esc(selected.subdivision) + ' · Division ' + esc(selected.division) + '</span>' +
+      '<span>Now: <strong>' + esc(selected.status) + '</strong>' + (selected.estimate ? ' · Est. ₹' + esc(selected.estimate) + ' lakhs' : '') + ' · Photos: ' + selected.beforeCount + ' before, ' + selected.afterCount + ' after</span>' +
+      '<span class="hint">Entered by ' + esc(selected.enteredBy) + (selected.updatedBy ? ' · last updated by ' + esc(selected.updatedBy) : '') + ' · ' + esc(selected.updated) + '</span>' +
+      (selected.remarks ? '<span class="hint">Remarks: ' + esc(selected.remarks) + '</span>' : '');
+    $('#viewOnly').hidden = canUpdate; $('#updEdit').hidden = !canUpdate;
+    var r = document.querySelector('input[name=ustatus][value="' + selected.status + '"]'); if (r) r.checked = true;
+    $('#uremarks').value = selected.remarks || '';
+    $('#uestimate').value = selected.estimate ? String(selected.estimate).replace(/,/g, '') : ''; showLakhs('#uestimate', '#uestHint');
+    $('#uperson').value = $('#uperson').value || mem().person || '';
+    $('#updBody').hidden = false; msg('#msgUpd', '');
+    $('#updBody').scrollIntoView({ behavior: 'smooth' });
+  });
+  $('#fUpd').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!selected || !canUpdate) return;
+    var status = radio('ustatus'); var errs = [];
+    if (!status) errs.push('Status of work');
+    if (status === 'Complete' && !selected.afterCount && !stores.updAfter.length) errs.push('an after-repair photo');
+    var miss = gpsMissing(stores.updBefore.concat(stores.updAfter)); if (miss) errs.push('GPS for ' + miss + ' photo(s)');
+    var person = $('#uperson').value.trim(); if (person.length < 2) errs.push('your name');
+    if (errs.length) { msg('#msgUpd', 'Still needed: ' + errs.join(', ') + '.', 'err'); return; }
+    remember({ person: person });
+    var info = { road: selected.road, roadNo: selected.roadNo, fromKm: Number(selected.fromKm).toFixed(3), toKm: Number(selected.toKm).toFixed(3), section: selected.section, subdivision: selected.subdivision };
+    var items = stores.updBefore.map(function (p) { return { p: p, phase: 'Before' }; }).concat(stores.updAfter.map(function (p) { return { p: p, phase: 'After' }; }));
+    var btn = $('#saveUpd'); btn.disabled = true;
+    uploadAll(selected.workId, items.filter(function (it) { return !it.p.uploaded; }), info, function (t) { msg('#msgUpd', t); })
+      .then(function () {
+        msg('#msgUpd', 'Saving…');
+        return run('updateWork', { workId: selected.workId, status: status, remarks: $('#uremarks').value, estimate: $('#uestimate').value, person: person });
+      })
+      .then(function () {
+        msg('#msgUpd', '');
+        $('#msgUpdDone').textContent = 'Work ' + selected.workId + ' updated to ' + status + '.'; $('#msgUpdDone').hidden = false;
+        stores.updBefore = []; stores.updAfter = []; renderBox('updBefore'); renderBox('updAfter');
+        selected = null; $('#updBody').hidden = true; search();
+      })
+      .catch(function (err) { msg('#msgUpd', 'Not saved: ' + err.message + ' Tap Save update again.', 'err'); })
+      .then(function () { btn.disabled = false; });
+  });
+
+  /* ---------- manage offices ---------- */
+  var OFFICES = [], offFilter = '', offLoaded = false;
+  var ACTION = { 'Not activated': 'Activate', 'Code issued': 'New code', 'Active': 'Reset' };
+  function loadOffices() {
+    offLoaded = true;
+    $('#offList').innerHTML = '<p class="hint">Loading offices…</p>';
+    return run('listOffices').then(function (r) { OFFICES = r.offices || []; renderOffices(); })
+      .catch(function (e) { $('#offList').innerHTML = '<p class="hint" style="color:var(--danger)">Could not load offices: ' + esc(e.message) + '</p>'; });
+  }
+  function shownOffices() {
+    var q = $('#offQ').value.trim().toLowerCase();
+    return OFFICES.filter(function (o) {
+      return (!offFilter || o.status === offFilter) && (!q || (o.office + ' ' + o.username + ' ' + o.path + ' ' + o.level).toLowerCase().indexOf(q) >= 0);
+    });
+  }
+  function renderOffices() {
+    var list = shownOffices();
+    var count = function (s) { return OFFICES.filter(function (o) { return o.status === s; }).length; };
+    $('#offInfo').textContent = OFFICES.length + ' offices · ' + count('Active') + ' active · ' + count('Code issued') + ' code issued · ' + count('Not activated') + ' not activated';
+    var pending = list.filter(function (o) { return o.status === 'Not activated'; });
+    var bb = $('#bulkBtn');
+    bb.hidden = pending.length < 2; bb.dataset.confirm = ''; bb.textContent = 'Activate all ' + pending.length + ' shown';
+    $('#offList').innerHTML = list.length ? list.map(function (o) {
+      var act = ACTION[o.status];
+      return '<div class="off" data-u="' + esc(o.username) + '">' +
+        '<div class="off-main"><span><strong>' + esc(o.office) + '</strong> <span class="pill">' + esc(o.level) + '</span></span>' +
+        (o.path ? '<span class="hint">' + esc(o.path) + '</span>' : '') +
+        '<span class="k">' + esc(o.username) + '</span>' +
+        '<span class="hint"><span class="pill os-' + esc(o.status.replace(/\s+/g, '-')) + '">' + esc(o.status) + '</span>' +
+        (o.codeValidTill ? ' code valid till ' + esc(o.codeValidTill) : '') + (o.lastSignIn ? ' · last sign-in ' + esc(o.lastSignIn) : '') + '</span></div>' +
+        (act ? '<button type="button" class="btn sm' + (act === 'Reset' ? '' : ' primary') + '" data-act="' + esc(o.username) + '" data-kind="' + act + '">' + act + '</button>' : '') +
+        '</div>';
+    }).join('') : '<p class="hint">No offices match.</p>';
+  }
+  $('#offChips').addEventListener('click', function (e) {
+    var c = e.target.closest('[data-os]'); if (!c) return;
+    document.querySelectorAll('#offChips .chip').forEach(function (x) { x.classList.toggle('on', x === c); });
+    offFilter = c.dataset.os; renderOffices();
+  });
+  $('#offQ').addEventListener('input', renderOffices);
+  $('#offRefresh').onclick = loadOffices;
+  /* Reset and bulk activation ask for a second tap (no pop-up dialogs). */
+  function armed(btn, label) {
+    if (btn.dataset.confirm === '1') return true;
+    btn.dataset.confirm = '1'; btn.dataset.label = btn.textContent; btn.textContent = label;
+    setTimeout(function () { if (btn.isConnected && btn.dataset.confirm === '1') { btn.dataset.confirm = ''; btn.textContent = btn.dataset.label; } }, 5000);
+    return false;
+  }
+  $('#offList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    if (b.dataset.kind === 'Reset' && !armed(b, 'Tap again to reset')) return;
+    issue([b.dataset.act], b);
+  });
+  $('#bulkBtn').onclick = function () {
+    var names = shownOffices().filter(function (o) { return o.status === 'Not activated'; }).map(function (o) { return o.username; });
+    if (!names.length || !armed(this, 'Tap again: ' + names.length + ' codes')) return;
+    issue(names.slice(0, 100), this);
+  };
+  function issue(names, btn) {
+    btn.disabled = true; msg('#msgOff', 'Issuing ' + names.length + ' code' + (names.length > 1 ? 's' : '') + '…');
+    run('issueCodes', { usernames: names, person: mem().person || '' }).then(function (r) {
+      var ok = r.issued.filter(function (i) { return i.code; }), bad = r.issued.filter(function (i) { return i.error; });
+      msg('#msgOff', bad.length ? bad.length + ' not issued: ' + bad.map(function (i) { return (i.office || i.username) + ' (' + i.error + ')'; }).join(', ') : '', bad.length ? 'err' : '');
+      if (ok.length) showCodes(ok);
+      return loadOffices();
+    }).catch(function (e) { msg('#msgOff', e.message, 'err'); })
+      .then(function () { btn.disabled = false; });
+  }
+  function showCodes(list) {
+    $('#codesList').innerHTML = list.map(function (i) {
+      return '<div class="code-row"><span><strong>' + esc(i.office) + '</strong> <span class="hint">' + esc(i.level) + '</span><br><span class="k">' + esc(i.username) + '</span></span>' +
+        '<span class="code">' + esc(i.code.slice(0, 3) + ' ' + i.code.slice(3)) + '</span></div>';
+    }).join('');
+    var head = 'HD Maintenance app' + (APP_LINK ? ': ' + APP_LINK : '') + '\nSign in with your username and the one-time code as the password, then set your own password.\n';
+    $('#codesText').value = head + list.map(function (i) {
+      return '\n' + i.office + ' (' + i.level + ')\nUsername: ' + i.username + '\nOne-time code: ' + i.code + '\nValid till: ' + i.validTill;
+    }).join('\n');
+    $('#codesBox').hidden = false; msg('#msgCodes', '');
+    $('#codesBox').scrollIntoView({ behavior: 'smooth' });
+  }
+  $('#codesClose').onclick = function () { $('#codesBox').hidden = true; $('#codesText').value = ''; $('#codesList').innerHTML = ''; };
+  $('#copyCodes').onclick = function () {
+    var t = $('#codesText');
+    var done = function () { msg('#msgCodes', 'Copied. Paste into WhatsApp or SMS.', 'ok'); };
+    var fallback = function () { t.focus(); t.select(); try { document.execCommand('copy'); done(); } catch (e) { msg('#msgCodes', 'Select the text above and copy it.', 'err'); } };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(done, fallback); else fallback();
+  };
+
+  /* ---------- dashboard ---------- */
+  var dashLoaded = false, dashFy = '';
+  var STAGES = ['Estimate', 'Tender', 'In Progress', 'Complete'];
+  var nf = function (n, d) { return Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); };
+  var fyLabel = function (y) { return y === 'all' ? 'All years' : 'FY ' + y + '–' + String(y + 1).slice(2); };
+  var pct = function (a, b) { return b ? Math.round(a * 100 / b) : 0; };
+  function loadDash() {
+    dashLoaded = true;
+    msg('#msgDash', 'Loading…');
+    return run('getDashboard', { fy: dashFy || undefined }).then(function (d) {
+      msg('#msgDash', '');
+      renderDash(d);
+    }).catch(function (e) { msg('#msgDash', 'Could not load the dashboard: ' + e.message, 'err'); });
+  }
+  $('#dashRefresh').onclick = loadDash;
+  $('#dashFy').addEventListener('change', function () { dashFy = this.value === 'all' ? 'all' : Number(this.value); loadDash(); });
+
+  /* a stacked stage bar; data-tip on each segment for hover / tap */
+  function stageBar(st, total, mini) {
+    if (!total) return '<div class="stagebar' + (mini ? ' mini' : '') + '" aria-label="No works"></div>';
+    return '<div class="stagebar' + (mini ? ' mini' : '') + '" aria-label="' + STAGES.map(function (s) { return s + ' ' + st[s]; }).join(', ') + '">' +
+      STAGES.map(function (s, i) {
+        return st[s] ? '<span class="s' + (i + 1) + '" style="flex:' + st[s] + '" data-tip="' + esc(s + ': ' + st[s] + ' work' + (st[s] > 1 ? 's' : '') + ' (' + pct(st[s], total) + '%)') + '"></span>' : '';
+      }).join('') + '</div>';
+  }
+  function hbars(list, empty) {
+    var max = Math.max.apply(null, list.map(function (x) { return x.amount; }).concat([0]));
+    var rows = list.filter(function (x) { return x.works; });
+    if (!rows.length) return '<p class="hint">' + empty + '</p>';
+    return rows.map(function (x) {
+      var w = max ? Math.max(1, x.amount * 100 / max) : 0;
+      var tip = x.name + ': ' + nf(x.works) + ' work' + (x.works > 1 ? 's' : '') + ', ₹' + nf(x.amount, 2) + ' L, ' + nf(x.km, 1) + ' km';
+      return '<div class="hbar"><span class="nm">' + esc(x.name) + '</span><span class="track">' +
+        '<span class="area"><span class="fill" style="width:' + w + '%" data-tip="' + esc(tip) + '"></span></span>' +
+        '<span class="val">₹' + nf(x.amount, 2) + ' L · ' + nf(x.works) + '</span></span></div>';
+    }).join('');
+  }
+  function renderDash(d) {
+    dashFy = d.fy;
+    $('#dashTitle').textContent = 'Dashboard · ' + (d.level === 'HQ' ? 'All regions' : d.office + ' ' + d.level);
+    $('#dashAsOf').textContent = fyLabel(d.fy) + ' · works by date entered · as of ' + d.asOf;
+    $('#dashFy').innerHTML = d.fys.map(function (y) { return '<option value="' + y + '"' + (y === d.fy ? ' selected' : '') + '>' + fyLabel(y) + '</option>'; }).join('') +
+      '<option value="all"' + (d.fy === 'all' ? ' selected' : '') + '>All years</option>';
+    var t = d.total;
+    $('#dashBody').hidden = false;
+    $('#kWorks').textContent = nf(t.works);
+    $('#kWorksSub').textContent = t.works ? nf(t.status['In Progress']) + ' in progress' : 'none entered yet';
+    $('#kAmt').innerHTML = '₹' + nf(t.amount, 2) + '<small>L</small>';
+    $('#kAmtSub').textContent = t.amount >= 100 ? '≈ ₹' + nf(t.amount / 100, 2) + ' crore' : 'estimated';
+    $('#kKm').innerHTML = nf(t.km, 1) + '<small>km</small>';
+    $('#kKmSub').textContent = nf(t.kmDone, 1) + ' km completed';
+    $('#kDone').textContent = pct(t.status.Complete, t.works) + '%';
+    $('#kDoneSub').textContent = nf(t.status.Complete) + ' of ' + nf(t.works) + ' work' + (t.works === 1 ? '' : 's');
+
+    $('#stageBar').outerHTML = stageBar(t.status, t.works).replace('class="stagebar"', 'class="stagebar" id="stageBar" role="img"');
+    $('#stageLegend').innerHTML = STAGES.map(function (s, i) {
+      return '<li><i class="s' + (i + 1) + '"></i>' + s + ' <b>' + nf(t.status[s]) + '</b> <span class="hint">' + pct(t.status[s], t.works) + '%</span></li>';
+    }).join('');
+
+    $('#childTitle').textContent = 'By ' + d.childLabel.toLowerCase() + (d.childLabel === 'Road' ? '' : ' under ' + (d.level === 'HQ' ? 'HQ' : d.office));
+    $('#childCol').textContent = d.childLabel;
+    $('#childRows').innerHTML = d.children.length ? d.children.map(function (c) {
+      var z = c.works ? '' : ' zero';
+      return '<tr><td class="' + z + '">' + esc(c.name) + '</td><td class="num' + z + '">' + nf(c.works) + '</td><td class="num' + z + '">' + nf(c.amount, 2) + '</td>' +
+        '<td class="num' + z + '">' + nf(c.km, 1) + '</td><td>' + stageBar(c.status, c.works, true) + '</td>' +
+        '<td class="num' + z + '">' + (c.works ? pct(c.status.Complete, c.works) + '%' : '–') + '</td></tr>';
+    }).join('') + (d.children.length > 1 ? '<tr class="tot"><td><strong>Total</strong></td><td class="num"><strong>' + nf(t.works) + '</strong></td><td class="num"><strong>' + nf(t.amount, 2) + '</strong></td><td class="num"><strong>' + nf(t.km, 1) + '</strong></td><td></td><td class="num"><strong>' + pct(t.status.Complete, t.works) + '%</strong></td></tr>' : '')
+      : '<tr><td colspan="6" class="zero">No works entered in ' + fyLabel(d.fy) + ' yet.</td></tr>';
+
+    $('#natureBars').innerHTML = hbars(d.nature, 'No works in this period.');
+    $('#classBars').innerHTML = hbars(d.classes.map(function (c) { return Object.assign({}, c, { name: c.name + ' (' + { SH: 'State Highway', MDR: 'Major District Road', ODR: 'Other District Road' }[c.name] + ')' }); }), 'No works in this period.');
+  }
+  /* tooltip on hover (mouse) or tap (phone) for any mark with data-tip */
+  (function () {
+    var tip = $('#tip'), cur = null;
+    function place(el, x, y) {
+      tip.textContent = el.dataset.tip; tip.hidden = false;
+      var w = tip.offsetWidth, h = tip.offsetHeight;
+      tip.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, x - w / 2)) + 'px';
+      tip.style.top = Math.max(8, y - h - 12) + 'px';
+    }
+    $('#fDash').addEventListener('pointermove', function (e) {
+      var el = e.target.closest('[data-tip]');
+      if (!el) { if (e.pointerType === 'mouse') { tip.hidden = true; cur = null; } return; }
+      cur = el; place(el, e.clientX, e.clientY);
+    });
+    $('#fDash').addEventListener('pointerdown', function (e) {
+      var el = e.target.closest('[data-tip]');
+      if (!el) { tip.hidden = true; cur = null; return; }
+      var r = el.getBoundingClientRect(); cur = el; place(el, r.left + r.width / 2, r.top);
+    });
+    $('#fDash').addEventListener('pointerleave', function () { tip.hidden = true; cur = null; });
+    window.addEventListener('scroll', function () { tip.hidden = true; }, { passive: true });
+  })();
+
+  /* ---------- sign-in, password ---------- */
+  function saveSession() { try { localStorage.setItem('hd-session-v2', JSON.stringify(session)); } catch (e) {} }
+  function show(which) {
+    $('#fLogin').hidden = which !== 'login'; $('#fSetPw').hidden = which !== 'setpw';
+    var app = which === 'app';
+    $('#appBar').hidden = !app; $('#userBar').hidden = !app;
+    if (!app) { $('#fDash').hidden = true; $('#fNew').hidden = true; $('#fUpd').hidden = true; $('#fOff').hidden = true; }
+  }
+  function applySession(s) {
+    session = s; setupToken = null;
+    var u = s.user;
+    FIXED = u.fixed || {};
+    $('#userInfo').innerHTML = '<strong>' + esc(u.office) + '</strong> · ' + esc(u.level) + ' · <span class="k">' + esc(u.username) + '</span>';
+    $('#tabNew').hidden = !u.rights.enter; $('#tabOff').hidden = !u.rights.manage;
+    $('#gps').hidden = !(u.rights.enter || u.rights.update);
+    var m = mem();
+    $('#person').value = m.person || ''; $('#mobile').value = m.mobile || ''; $('#uperson').value = m.person || '';
+    found = []; selected = null; listLoaded = false; offLoaded = false; OFFICES = []; dashLoaded = false;
+    $('#updBody').hidden = true; $('#codesBox').hidden = true;
+    show('app');
+    if (u.rights.enter) clearNew(), loadLists();
+    if (u.rights.enter) tab('new');
+    else { tab('dash'); loadDash(); } // monitoring offices open on the dashboard
+  }
+  function signOut(message) {
+    session = null; FIXED = {}; ROWS = [];
+    try { localStorage.removeItem('hd-session-v2'); } catch (e) {}
+    stores.newBefore = []; stores.newAfter = []; stores.updBefore = []; stores.updAfter = [];
+    $('#loginPw').value = '';
+    show('login');
+    msg('#msgLogin', message || '', message ? 'err' : '');
+  }
+  $('#signOutBtn').onclick = function () { signOut(''); };
+  $('#fLogin').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var u = $('#loginUser').value.trim(), pw = $('#loginPw').value;
+    if (!u || !pw) { msg('#msgLogin', 'Enter your office username and password.', 'err'); return; }
+    var btn = $('#loginBtn'); btn.disabled = true; msg('#msgLogin', 'Signing in…');
+    run('login', { username: u, password: pw }).then(function (res) {
+      msg('#msgLogin', '');
+      if (res.setPassword) { setupToken = res.setupToken; openSetPw('first', res.username); }
+      else { applySession(res); saveSession(); }
+    }).catch(function (err) { msg('#msgLogin', err.message, 'err'); })
+      .then(function () { btn.disabled = false; });
+  });
+  function openSetPw(mode, username) {
+    $('#fSetPw').dataset.mode = mode;
+    $('#newPw').value = ''; $('#newPw2').value = ''; $('#curPw').value = '';
+    $('#curPwBox').hidden = mode !== 'change'; $('#setPwCancel').hidden = mode !== 'change';
+    $('#setPwTitle').textContent = mode === 'change' ? 'Change password' : 'Set your password';
+    $('#setPwIntro').textContent = mode === 'change'
+      ? 'Other phones signed in to this office will be signed out.'
+      : 'Code accepted for ' + username + '. Set the password your office will use from now on. The code stops working once you save.';
+    msg('#msgSetPw', '');
+    if (mode === 'change') { $('#appBar').hidden = true; $('#fDash').hidden = true; $('#fNew').hidden = true; $('#fUpd').hidden = true; $('#fOff').hidden = true; $('#fLogin').hidden = true; $('#fSetPw').hidden = false; }
+    else show('setpw');
+  }
+  $('#changePwBtn').onclick = function () { openSetPw('change'); };
+  $('#setPwCancel').onclick = function () { $('#fSetPw').hidden = true; applySession(session); };
+  $('#fSetPw').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var p1 = $('#newPw').value, p2 = $('#newPw2').value, mode = this.dataset.mode;
+    if (p1.length < 8) { msg('#msgSetPw', 'Password must be at least 8 characters.', 'err'); return; }
+    if (p1 !== p2) { msg('#msgSetPw', 'The two passwords do not match.', 'err'); return; }
+    var btn = $('#setPwBtn'); btn.disabled = true; msg('#msgSetPw', 'Saving…');
+    var call = mode === 'change'
+      ? run('changePassword', { current: $('#curPw').value, newPassword: p1, person: mem().person || '' })
+      : run('setPassword', { setupToken: setupToken, newPassword: p1 });
+    call.then(function (res) {
+      $('#fSetPw').hidden = true;
+      applySession(res); saveSession();
+      msg(res.user.rights.enter ? '#msgNew' : '#msgUpd', mode === 'change' ? 'Password changed.' : 'Password saved. Your office is now active.', 'ok');
+    }).catch(function (err) { msg('#msgSetPw', err.message, 'err'); })
+      .then(function () { btn.disabled = false; });
+  });
+
+  /* ---------- start ---------- */
+  updLen();
+  var stored = null;
+  try { stored = JSON.parse(localStorage.getItem('hd-session-v2') || 'null'); } catch (e) { stored = null; }
+  if (stored && stored.token && stored.user) {
+    applySession(stored);
+    run('me').then(function (u) {
+      if (session && JSON.stringify(u) !== JSON.stringify(session.user)) { session.user = u; saveSession(); applySession(session); }
+    }).catch(function () { /* signOut() already ran if the sign-in is no longer valid */ });
+  } else {
+    show('login');
+  }
+})();
+</script>
+</body>
+</html>
